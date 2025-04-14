@@ -1,31 +1,16 @@
-use std::collections::HashMap;
-
-use anyhow::Result;
-use bytes::{Buf, BytesMut};
-use tokio::{
-    io::{self, AsyncReadExt, AsyncWriteExt, BufWriter},
-    net::{TcpListener, TcpStream},
-};
+use std::sync::Arc;
+use tokio::net::TcpListener;
 
 use crate::connection::Connection;
+use connection_handler::ConnectionHandler;
+pub use router::Router;
 
-use crate::http::{Request, Response};
-
-struct RouteHandler {}
-
-struct Router {}
-
-// ---------------------- ---------------------- //
+mod connection_handler;
+mod router;
 
 struct Server {
     listener: TcpListener,
     // limit_connections: Arc<Semaphore>,
-}
-
-struct ConnectionHandler {
-    connection: Connection,
-    // shutdown: Shutdown,
-    //  _shutdown_complete: mpsc::Sender<()>,
 }
 
 impl Server {
@@ -33,7 +18,7 @@ impl Server {
         Server { listener }
     }
 
-    async fn run(&self, router: Router) -> Result<()> {
+    async fn run(&self, router: Arc<Router>) -> anyhow::Result<()> {
         loop {
             /*
                 Server: accepts connections
@@ -67,7 +52,7 @@ impl Server {
                 and is dropped when the task completes.
             */
             let connection = Connection::new(tcp_stream);
-            let mut handler = ConnectionHandler::new(connection);
+            let mut handler = ConnectionHandler::new(connection, router.clone());
 
             // Spawn a new task to process the connections
             tokio::spawn(async move {
@@ -79,36 +64,12 @@ impl Server {
     }
 }
 
-impl ConnectionHandler {
-    fn new(connection: Connection) -> Self {
-        ConnectionHandler { connection }
-    }
-
-    async fn run(&mut self) -> Result<()> {
-        fn handler(req: Request) -> Response {
-            dbg!(req);
-
-            Response {
-                status_code: 204,
-                status_text: "No content".to_string(),
-                headers: HashMap::new(),
-            }
-        }
-
-        self.connection.read(handler).await?;
-
-        Ok(())
-    }
-}
-
-pub async fn run(listener: TcpListener) -> Result<()> {
+pub async fn run(listener: TcpListener, router: Router) -> anyhow::Result<()> {
     // TODO: wait for shutdown signal
 
     let server = Server::new(listener);
 
-    let router = Router {};
-
-    server.run(router).await?;
+    server.run(Arc::new(router)).await?;
 
     Ok(())
 }

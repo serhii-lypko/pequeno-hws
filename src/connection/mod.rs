@@ -1,12 +1,14 @@
 use anyhow::Result;
-use bytes::{Buf, BytesMut};
+use bytes::BytesMut;
 use std::collections::HashMap;
+use std::sync::Arc;
 use tokio::{
-    io::{self, AsyncReadExt, AsyncWriteExt, BufWriter},
-    net::{TcpListener, TcpStream},
+    io::{AsyncReadExt, AsyncWriteExt, BufWriter},
+    net::TcpStream,
 };
 
-use crate::http::{Method, Request, Response};
+use crate::Router;
+use crate::http::{HTTPRequest, HTTPResponse, Method};
 
 const READ_BUFF_CAPACITY: usize = 4 * 1024;
 
@@ -25,14 +27,15 @@ impl Connection {
         }
     }
 
-    pub async fn read<F>(&mut self, handler: F) -> Result<()>
-    where
-        F: Fn(Request) -> Response,
-    {
+    pub async fn read(&mut self, router: Arc<Router>) -> Result<()> {
         let _advance = self.stream.read_buf(&mut self.read_buffer).await?;
 
         let request = self.parse_request()?;
-        let response = handler(request);
+
+        let tmp_route = &router.routes[0];
+        let route_handler = &tmp_route.handler;
+
+        let response = route_handler(request);
 
         self.stream.write_all(&response.to_bytes()).await.unwrap();
         self.stream.flush().await?;
@@ -40,7 +43,7 @@ impl Connection {
         Ok(())
     }
 
-    fn parse_request(&self) -> Result<Request> {
+    fn parse_request(&self) -> Result<HTTPRequest> {
         let data = std::str::from_utf8(&self.read_buffer)?;
         let mut lines = data.split("\r\n");
 
@@ -59,7 +62,7 @@ impl Connection {
             .next()
             .ok_or_else(|| anyhow::anyhow!("Missing route path"))?;
 
-        let request = Request {
+        let request = HTTPRequest {
             method,
             path: route_path.into(),
             headers: HashMap::new(),

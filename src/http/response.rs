@@ -1,16 +1,16 @@
 use std::collections::HashMap;
 
 #[derive(Debug)]
-pub struct Response {
+pub struct HTTPResponse {
     pub status_code: u16,
     pub status_text: String,
     pub headers: HashMap<String, String>,
     // body: Option<Vec<u8>>,
 }
 
-impl Response {
+impl HTTPResponse {
     pub fn new(status_code: u16, status_text: String) -> Self {
-        Response {
+        HTTPResponse {
             status_code,
             status_text,
             headers: HashMap::new(),

@@ -5,16 +5,16 @@ use crate::http::Method;
 type Headers = HashMap<String, String>;
 
 #[derive(Debug)]
-pub struct Request {
+pub struct HTTPRequest {
     pub method: Method,
     pub path: String,
     pub headers: Headers,
     // body: Option<Vec<u8>>,
 }
 
-impl Request {
+impl HTTPRequest {
     pub fn new(method: Method, path: String, headers: Option<Headers>) -> Self {
-        Request {
+        HTTPRequest {
             method,
             path,
             headers: headers.unwrap_or_default(),
