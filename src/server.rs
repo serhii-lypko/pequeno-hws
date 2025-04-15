@@ -1,12 +1,17 @@
-use std::sync::Arc;
 use tokio::net::TcpListener;
 
 use crate::connection::Connection;
-use connection_handler::ConnectionHandler;
-pub use router::Router;
+use crate::connection_handler::ConnectionHandler;
 
-mod connection_handler;
-mod router;
+/*
+  Primary responsibility: Connection Acceptance and Lifecycle Management
+
+  - Accept incoming TCP connections
+  - Manage server-wide resources and limits
+  - Handle graceful shutdown
+  - Configure global server settings (timeouts, max connections, etc.)
+  - Spawn connection handlers for new connections
+*/
 
 struct Server {
     listener: TcpListener,
@@ -18,7 +23,7 @@ impl Server {
         Server { listener }
     }
 
-    async fn run(&self, router: Arc<Router>) -> anyhow::Result<()> {
+    async fn run(&self) -> anyhow::Result<()> {
         loop {
             /*
                 Server: accepts connections
@@ -52,7 +57,7 @@ impl Server {
                 and is dropped when the task completes.
             */
             let connection = Connection::new(tcp_stream);
-            let mut handler = ConnectionHandler::new(connection, router.clone());
+            let mut handler = ConnectionHandler::new(connection);
 
             // Spawn a new task to process the connections
             tokio::spawn(async move {
@@ -64,12 +69,12 @@ impl Server {
     }
 }
 
-pub async fn run(listener: TcpListener, router: Router) -> anyhow::Result<()> {
-    // TODO: wait for shutdown signal
+pub async fn run(listener: TcpListener) -> anyhow::Result<()> {
+    // TODO -> wait for shutdown signal
 
     let server = Server::new(listener);
 
-    server.run(Arc::new(router)).await?;
+    server.run().await?;
 
     Ok(())
 }

@@ -1,14 +1,26 @@
 use anyhow::Result;
 use bytes::BytesMut;
 use std::collections::HashMap;
-use std::sync::Arc;
+
 use tokio::{
     io::{AsyncReadExt, AsyncWriteExt, BufWriter},
     net::TcpStream,
 };
 
-use crate::Router;
 use crate::http::{HTTPRequest, HTTPResponse, Method};
+
+/*
+  Primary responsibility: Raw TCP I/O Management
+
+  - Manage the TCP stream lifecycle
+  - Buffer management for reading/writing
+  - Handle low-level socket operations
+  - Implement keep-alive mechanics
+  - Handle TCP-level timeouts
+  - Manage connection state (open, closing, closed)
+  - Buffer size management
+  - Handle partial reads/writes
+*/
 
 const READ_BUFF_CAPACITY: usize = 4 * 1024;
 
@@ -27,15 +39,18 @@ impl Connection {
         }
     }
 
-    pub async fn read(&mut self, router: Arc<Router>) -> Result<()> {
+    pub async fn read(&mut self) -> Result<()> {
         let _advance = self.stream.read_buf(&mut self.read_buffer).await?;
 
         let request = self.parse_request()?;
 
-        let tmp_route = &router.routes[0];
-        let route_handler = &tmp_route.handler;
+        // let response = route_handler(request);
 
-        let response = route_handler(request);
+        let response = HTTPResponse {
+            status_code: 204,
+            status_text: "No content".to_string(),
+            headers: HashMap::new(),
+        };
 
         self.stream.write_all(&response.to_bytes()).await.unwrap();
         self.stream.flush().await?;
