@@ -13,14 +13,20 @@ mod http;
 mod server;
 
 /*
-    TODO Middleware Integration:
+    Agenda:
 
+    TODO -> nice colored logs using tracing
+
+    TODO -> Middleware Integration:
     - HTTPRequest preprocessing
     - Authentication/authorization
     - Logging
     - HTTPResponse postprocessing
 
     TODO -> practice mpsc
+    https://tokio.rs/tokio/tutorial/channels
+
+    TODO -> practice redis pub sub and clustering
 */
 
 /* -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- */

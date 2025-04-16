@@ -1,13 +1,10 @@
 use anyhow::Result;
 use bytes::BytesMut;
-use std::collections::HashMap;
 
 use tokio::{
     io::{AsyncReadExt, AsyncWriteExt, BufWriter},
     net::TcpStream,
 };
-
-use crate::http::{HTTPRequest, HTTPResponse, Method};
 
 /*
   Primary responsibility: Raw TCP I/O Management
@@ -39,50 +36,18 @@ impl Connection {
         }
     }
 
-    pub async fn read(&mut self) -> Result<()> {
+    pub async fn read(&mut self) -> Result<Vec<u8>> {
         let _advance = self.stream.read_buf(&mut self.read_buffer).await?;
+        let vec_res = self.read_buffer.to_vec();
+        self.read_buffer.clear();
 
-        let request = self.parse_request()?;
+        Ok(vec_res)
+    }
 
-        // let response = route_handler(request);
-
-        let response = HTTPResponse {
-            status_code: 204,
-            status_text: "No content".to_string(),
-            headers: HashMap::new(),
-        };
-
-        self.stream.write_all(&response.to_bytes()).await.unwrap();
+    pub async fn write(&mut self, response: &[u8]) -> Result<()> {
+        self.stream.write_all(response).await?;
         self.stream.flush().await?;
 
         Ok(())
-    }
-
-    fn parse_request(&self) -> Result<HTTPRequest> {
-        let data = std::str::from_utf8(&self.read_buffer)?;
-        let mut lines = data.split("\r\n");
-
-        let request_line = lines
-            .next()
-            .ok_or_else(|| anyhow::anyhow!("Empty request"))?;
-
-        let mut parts = request_line.split_whitespace();
-
-        let method: Method = parts
-            .next()
-            .ok_or_else(|| anyhow::anyhow!("Missing method"))
-            .and_then(|m| m.try_into())?;
-
-        let route_path = parts
-            .next()
-            .ok_or_else(|| anyhow::anyhow!("Missing route path"))?;
-
-        let request = HTTPRequest {
-            method,
-            path: route_path.into(),
-            headers: HashMap::new(),
-        };
-
-        Ok(request)
     }
 }
