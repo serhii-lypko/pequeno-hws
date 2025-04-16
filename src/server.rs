@@ -1,7 +1,9 @@
+use std::collections::HashMap;
 use tokio::net::TcpListener;
 
 use crate::connection::Connection;
 use crate::connection_handler::ConnectionHandler;
+use crate::http::HTTPResponse;
 
 /*
   Primary responsibility: Connection Acceptance and Lifecycle Management
@@ -57,11 +59,22 @@ impl Server {
                 and is dropped when the task completes.
             */
             let connection = Connection::new(tcp_stream);
-            let mut handler = ConnectionHandler::new(connection);
+            let mut connection_handler = ConnectionHandler::new(connection);
+
+            let tmp_request_handler = |req| async {
+                let response = HTTPResponse {
+                    status_code: 200,
+                    // status_text: "No content".to_string(),
+                    status_text: "OK".to_string(),
+                    headers: HashMap::new(),
+                };
+
+                Ok(response)
+            };
 
             // Spawn a new task to process the connections
             tokio::spawn(async move {
-                if let Err(err) = handler.run().await {
+                if let Err(err) = connection_handler.run(tmp_request_handler).await {
                     println!("Got error when running handler for connection {:?}", err);
                 }
             });

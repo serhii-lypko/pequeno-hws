@@ -17,7 +17,6 @@ use crate::http::{HTTPRequest, HTTPResponse, Method};
     - Clean up resources when connection ends
 */
 
-// TODO: inject request handler here?
 /*
     Options:
 
@@ -37,24 +36,21 @@ impl ConnectionHandler {
         ConnectionHandler { connection }
     }
 
-    pub async fn run(&mut self) -> anyhow::Result<()> {
-        // TODO -> normally it should wait for a shutdown signal
-        // https://github.com/tokio-rs/mini-redis/blob/master/src/server.rs#L321
-        loop {
-            let raw_data = self.connection.read().await?;
-            let parsed_req = self.parse_request(&raw_data)?;
+    pub async fn run<F, Fut>(&mut self, handler: F) -> anyhow::Result<()>
+    where
+        F: Fn(HTTPRequest) -> Fut,
+        Fut: Future<Output = Result<HTTPResponse, anyhow::Error>>,
+    {
+        let raw_data = self.connection.read().await?;
+        let parsed_req = self.parse_request(&raw_data)?;
 
-            let response = HTTPResponse {
-                status_code: 204,
-                status_text: "No content".to_string(),
-                headers: HashMap::new(),
-            };
+        let response = handler(parsed_req).await?;
 
-            self.connection.write(&response.to_bytes()).await?;
-        }
+        self.connection.write(&response.to_bytes()).await?;
+
+        Ok(())
     }
 
-    // TODO -> introduce request_handler, to manage that kind of things?
     fn parse_request(&self, raw_data: &[u8]) -> Result<HTTPRequest> {
         let data = std::str::from_utf8(raw_data)?;
         let mut lines = data.split("\r\n");
