@@ -1,9 +1,9 @@
 trait Handler {
-    type HTTPRequest;
-    type HTTPResponse;
+    type HttpRequest;
+    type HttpResponse;
     type Error;
 
-    fn call(&self, request: Self::HTTPRequest);
+    fn call(&self, request: Self::HttpRequest);
 }
 
 struct RouteHandler<F, RQ, RS>(F, PhantomData<(RQ, RS)>)
@@ -16,11 +16,11 @@ where
     RQ: 'static,
     RS: 'static,
 {
-    type HTTPRequest = RQ;
-    type HTTPResponse = RS;
+    type HttpRequest = RQ;
+    type HttpResponse = RS;
     type Error = anyhow::Error;
 
-    fn call(&self, request: Self::HTTPRequest) {
+    fn call(&self, request: Self::HttpRequest) {
         todo!()
     }
 }

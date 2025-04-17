@@ -3,7 +3,7 @@ use std::marker::PhantomData;
 use tokio::net::TcpListener;
 
 use crate::error::AppResult;
-use crate::http::{HTTPRequest, HTTPResponse};
+use crate::http::{HttpRequest, HttpResponse};
 use crate::server::run;
 
 mod connection;
@@ -18,10 +18,10 @@ mod server;
     TODO -> nice colored logs using tracing
 
     TODO -> Middleware Integration:
-    - HTTPRequest preprocessing
+    - HttpRequest preprocessing
     - Authentication/authorization
     - Logging
-    - HTTPResponse postprocessing
+    - HttpResponse postprocessing
 
     TODO -> practice mpsc
     https://tokio.rs/tokio/tutorial/channels
@@ -39,7 +39,7 @@ async fn main() -> AppResult<()> {
             .route("/users", post(create_user));
     */
 
-    // let handler = |req| HTTPResponse {
+    // let handler = |req| HttpResponse {
     //     status_code: 204,
     //     status_text: "No content".to_string(),
     //     headers: HashMap::new(),

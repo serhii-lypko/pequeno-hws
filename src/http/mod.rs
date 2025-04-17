@@ -1,7 +1,7 @@
 use std::convert::TryFrom;
 
-pub use request::HTTPRequest;
-pub use response::HTTPResponse;
+pub use request::HttpRequest;
+pub use response::HttpResponse;
 
 pub mod request;
 pub mod response;

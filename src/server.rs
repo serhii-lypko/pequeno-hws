@@ -3,7 +3,7 @@ use tokio::net::TcpListener;
 
 use crate::connection::Connection;
 use crate::connection_handler::ConnectionHandler;
-use crate::http::HTTPResponse;
+use crate::http::HttpResponse;
 
 /*
   Primary responsibility: Connection Acceptance and Lifecycle Management
@@ -61,13 +61,19 @@ impl Server {
             let connection = Connection::new(tcp_stream);
             let mut connection_handler = ConnectionHandler::new(connection);
 
+            // TODO -> handlers response should impl Responder
+
             let tmp_request_handler = |req| async {
-                let response = HTTPResponse {
+                let mut response = HttpResponse {
                     status_code: 200,
                     // status_text: "No content".to_string(),
                     status_text: "OK".to_string(),
                     headers: HashMap::new(),
                 };
+
+                response.with_header();
+
+                // tokio::time::sleep(tokio::time::Duration::from_secs(2)).await;
 
                 Ok(response)
             };
