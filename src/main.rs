@@ -10,6 +10,7 @@ mod connection;
 mod connection_handler;
 mod error;
 mod http;
+mod request_handler;
 mod server;
 
 /*

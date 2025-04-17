@@ -5,6 +5,8 @@ use tokio::time::{Duration, timeout};
 use crate::connection::Connection;
 use crate::http::{HttpRequest, HttpResponse, Method};
 
+use crate::request_handler::Handler;
+
 /*
     Primary responsibility: Connection Lifecycle and Protocol Flow
 
@@ -52,16 +54,16 @@ impl ConnectionHandler {
         }
     */
 
-    pub async fn run<F, Fut>(&mut self, handler: F) -> anyhow::Result<()>
+    pub async fn run<T>(&mut self, mut handler: T) -> anyhow::Result<()>
     where
-        F: Fn(HttpRequest) -> Fut,
-        Fut: Future<Output = Result<HttpResponse, anyhow::Error>>,
+        T: Handler,
     {
         let raw_data = self.connection.read().await?;
         let parsed_req = self.parse_request(&raw_data)?;
 
-        // NOTE -> wrapped with timeout
-        let response_result = timeout(Duration::from_secs(4), handler(parsed_req)).await?;
+        let response_result = handler.call(parsed_req).await;
+
+        // let response_result = timeout(Duration::from_secs(4), handler(parsed_req)).await?;
 
         if let Ok(response) = response_result {
             self.connection.write(&response.to_bytes()).await?;

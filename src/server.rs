@@ -1,9 +1,9 @@
-use std::collections::HashMap;
 use tokio::net::TcpListener;
+use tokio::time::Duration;
 
 use crate::connection::Connection;
 use crate::connection_handler::ConnectionHandler;
-use crate::http::HttpResponse;
+use crate::request_handler::{RequestHandler, Timeout};
 
 /*
   Primary responsibility: Connection Acceptance and Lifecycle Management
@@ -14,6 +14,8 @@ use crate::http::HttpResponse;
   - Configure global server settings (timeouts, max connections, etc.)
   - Spawn connection handlers for new connections
 */
+
+/* -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- */
 
 struct Server {
     listener: TcpListener,
@@ -61,26 +63,12 @@ impl Server {
             let connection = Connection::new(tcp_stream);
             let mut connection_handler = ConnectionHandler::new(connection);
 
-            // TODO -> handlers response should impl Responder
-
-            let tmp_request_handler = |req| async {
-                let mut response = HttpResponse {
-                    status_code: 200,
-                    // status_text: "No content".to_string(),
-                    status_text: "OK".to_string(),
-                    headers: HashMap::new(),
-                };
-
-                response.with_header();
-
-                // tokio::time::sleep(tokio::time::Duration::from_secs(2)).await;
-
-                Ok(response)
-            };
+            let req_handler = RequestHandler;
+            let timeout = Timeout::new(Duration::from_secs(5), req_handler);
 
             // Spawn a new task to process the connections
             tokio::spawn(async move {
-                if let Err(err) = connection_handler.run(tmp_request_handler).await {
+                if let Err(err) = connection_handler.run(timeout).await {
                     println!("Got error when running handler for connection {:?}", err);
                 }
             });
