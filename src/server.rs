@@ -3,7 +3,7 @@ use tokio::time::Duration;
 
 use crate::connection::Connection;
 use crate::connection_handler::ConnectionHandler;
-use crate::request_handler::{RequestHandler, Timeout};
+use crate::request_handler::{RequestHandler, SimpleAuth, Timeout};
 
 /*
   Primary responsibility: Connection Acceptance and Lifecycle Management
@@ -63,12 +63,16 @@ impl Server {
             let connection = Connection::new(tcp_stream);
             let mut connection_handler = ConnectionHandler::new(connection);
 
+            // TODO -> where to place router logic?
+
+            // Middlewares chain
             let req_handler = RequestHandler;
             let timeout = Timeout::new(Duration::from_secs(5), req_handler);
+            let auth = SimpleAuth::new(timeout);
 
             // Spawn a new task to process the connections
             tokio::spawn(async move {
-                if let Err(err) = connection_handler.run(timeout).await {
+                if let Err(err) = connection_handler.run(auth).await {
                     println!("Got error when running handler for connection {:?}", err);
                 }
             });

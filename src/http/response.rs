@@ -1,10 +1,27 @@
 use std::collections::HashMap;
 
-// TODO -> different kinds of responses. or status codes?
+pub trait IntoResponse {
+    fn into_response(self) -> HttpResponse;
+}
 
-trait Responder {}
+// TODO -> normally it should be rather be a tuple struct
+#[derive(Debug, Clone, Copy)]
+pub enum StatusCode {
+    OK,
+    Unauthorized,
+    NotFound,
+    // ...
+}
 
-trait IntoResponse {}
+impl IntoResponse for StatusCode {
+    fn into_response(self) -> HttpResponse {
+        match self {
+            StatusCode::OK => HttpResponse::new(200, "OK".to_string()),
+            StatusCode::Unauthorized => HttpResponse::new(401, "Unauthorized".to_string()),
+            StatusCode::NotFound => HttpResponse::new(404, "Not Found".to_string()),
+        }
+    }
+}
 
 #[derive(Debug)]
 pub struct HttpResponse {
@@ -23,7 +40,7 @@ impl HttpResponse {
         }
     }
 
-    // FXME -> hardcoded
+    // TODO -> hardcoded
     pub fn with_header(&mut self) {
         self.headers.insert(
             "Content-Type".to_string(),
