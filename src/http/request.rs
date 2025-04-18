@@ -20,4 +20,9 @@ impl HttpRequest {
             headers: headers.unwrap_or_default(),
         }
     }
+
+    // TODO -> should be taken from auth instead of headers + not hardcoded
+    pub fn has_auth(&self) -> bool {
+        self.headers.contains_key("auth")
+    }
 }

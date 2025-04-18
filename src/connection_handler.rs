@@ -63,8 +63,6 @@ impl ConnectionHandler {
 
         let response_result = handler.call(parsed_req).await;
 
-        // let response_result = timeout(Duration::from_secs(4), handler(parsed_req)).await?;
-
         if let Ok(response) = response_result {
             self.connection.write(&response.to_bytes()).await?;
         }
@@ -91,10 +89,21 @@ impl ConnectionHandler {
             .next()
             .ok_or_else(|| anyhow::anyhow!("Missing route path"))?;
 
+        let mut headers = HashMap::new();
+        for line in lines {
+            if line.is_empty() {
+                break;
+            }
+
+            if let Some((name, value)) = line.split_once(": ") {
+                headers.insert(name.trim().to_string(), value.trim().to_string());
+            }
+        }
+
         let request = HttpRequest {
             method,
             path: route_path.into(),
-            headers: HashMap::new(),
+            headers,
         };
 
         Ok(request)

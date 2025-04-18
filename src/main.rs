@@ -16,13 +16,11 @@ mod server;
 /*
     Agenda:
 
-    TODO -> nice colored logs using tracing
+    TODO -> routing
 
     TODO -> Middleware Integration:
-    - HttpRequest preprocessing
     - Authentication/authorization
     - Logging
-    - HttpResponse postprocessing
 
     TODO -> practice mpsc
     https://tokio.rs/tokio/tutorial/channels
