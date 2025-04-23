@@ -20,7 +20,11 @@ mod server;
 
     TODO -> Middleware Integration:
     - Authentication/authorization
+    - Retry
+    - RateLimit?
     - Logging
+
+    TODO -> graceful shutdown & connections limiting
 
     TODO -> practice mpsc
     https://tokio.rs/tokio/tutorial/channels
@@ -28,12 +32,19 @@ mod server;
 
 /* -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- */
 
+// Request -> middlewares 1 -> 2 .. -> N -> Router -> Result -> middlwares 3 -> ... N -> Response
+
 #[tokio::main]
 async fn main() -> AppResult<()> {
     /*
-        let app = Router::new()
-            .route("/", get(root))
-            .route("/users", post(create_user));
+        let router = Router::new()
+            .route("/health", get(health))
+            .route("/test/room_socket_ids/{user_id}", get(get_room_socket_ids))
+            .layer((
+                CorsLayer::new().allow_origin(Any),
+                TimeoutLayer::new(Duration::from_secs(REQUEST_TIMEOUT_SECS)),
+            ))
+            .with_state(shared_state);
     */
 
     // let handler = |req| HttpResponse {

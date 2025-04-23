@@ -3,30 +3,9 @@ use std::collections::HashMap;
 use tokio::time::{Duration, timeout};
 
 use crate::connection::Connection;
-use crate::http::{HttpRequest, HttpResponse, Method};
+use crate::http::{HttpRequest, HttpResponse, Method, response::ResponseTrait};
 
-use crate::request_handler::Handler;
-
-/*
-    Primary responsibility: Connection Lifecycle and Protocol Flow
-
-    - Orchestrate the request-response cycle
-    - Manage connection state transitions
-    - Coordinate between Connection (I/O) and RequestHandler (processing)
-    - Handle connection-level errors
-    - Implement backpressure mechanisms
-    - Manage connection-specific timeouts
-    - Handle protocol upgrades (if needed)
-    - Clean up resources when connection ends
-*/
-
-/*
-    Options:
-
-    - Request handler owned by connection handler
-    - Request handler shared via Arc
-    - Request handler as trait object for flexibility
-*/
+use crate::request_handler::Service;
 
 pub struct ConnectionHandler {
     connection: Connection,
@@ -54,9 +33,9 @@ impl ConnectionHandler {
         }
     */
 
-    pub async fn run<T>(&mut self, mut handler: T) -> anyhow::Result<()>
+    pub async fn run<S>(&mut self, mut handler: S) -> anyhow::Result<()>
     where
-        T: Handler,
+        S: Service,
     {
         let raw_data = self.connection.read().await?;
         let parsed_req = self.parse_request(&raw_data)?;

@@ -29,37 +29,10 @@ impl Server {
 
     async fn run(&self) -> anyhow::Result<()> {
         loop {
-            /*
-                Server: accepts connections
-                |-> handler_1 -> connection_1
-                |-> handler_2 -> connection_2
-                |-> ...
-
-            */
-
             // TODO -> instead of direct listener accept, exponential backoff needs to be implemented
             // https://github.com/tokio-rs/mini-redis/blob/master/src/server.rs#L278
             let (tcp_stream, _socket_addr) = self.listener.accept().await?;
 
-            /*
-                Define handler outside of the spawn because:
-
-                - Ownership and Move Semantics: By creating the handler outside the spawn, the code makes
-                ownership transfer explicit. The handler instance is created in the parent task's context
-                and then moved into the spawned task with async move. This clearly shows the transfer of resources.
-
-                - Error Handling Before Task Creation: If there's an error during the creation of the Connection
-                or initializing the Handler, it's handled at the listener level rather than inside each spawned task.
-                This prevents spawning tasks that would immediately fail.
-
-                - Resource Initialization Separation: It separates the concerns of resource acquisition
-                (getting a socket, creating buffers) from the task of processing a connection. This makes
-                the code more maintainable and easier to reason about.
-
-                - Explicit Lifetime Management: By structuring the code this way, it's clear that the Handler
-                (which contains the connection and other resources) lives exactly as long as the spawned task,
-                and is dropped when the task completes.
-            */
             let connection = Connection::new(tcp_stream);
             let mut connection_handler = ConnectionHandler::new(connection);
 
@@ -67,12 +40,12 @@ impl Server {
 
             // Middlewares chain
             let req_handler = RequestHandler;
-            let timeout = Timeout::new(Duration::from_secs(5), req_handler);
-            let auth = SimpleAuth::new(timeout);
+            // let timeout = Timeout::new(Duration::from_secs(5), req_handler);
+            // let auth = SimpleAuth::new(timeout);
 
             // Spawn a new task to process the connections
             tokio::spawn(async move {
-                if let Err(err) = connection_handler.run(auth).await {
+                if let Err(err) = connection_handler.run(req_handler).await {
                     println!("Got error when running handler for connection {:?}", err);
                 }
             });

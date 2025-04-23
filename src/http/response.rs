@@ -1,5 +1,9 @@
 use std::collections::HashMap;
 
+pub trait ResponseTrait {
+    fn to_bytes(self) -> Vec<u8>;
+}
+
 pub trait IntoResponse {
     fn into_response(self) -> HttpResponse;
 }
@@ -29,6 +33,12 @@ pub struct HttpResponse {
     pub status_text: String,
     pub headers: HashMap<String, String>,
     // body: Option<Vec<u8>>,
+}
+
+impl ResponseTrait for HttpResponse {
+    fn to_bytes(self) -> Vec<u8> {
+        todo!()
+    }
 }
 
 impl HttpResponse {
